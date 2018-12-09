@@ -2,6 +2,7 @@
 Train a GAN on pictures from your webcam
 
 Install [OpenCV](https://opencv.org/) (tested on 3.4.3) 
+
     $ git clone https://github.com/arshamg/gancam.git
     $ cd gancam/
     $ pip install -r requirements.txt
