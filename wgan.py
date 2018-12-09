@@ -1,9 +1,7 @@
 
-# Large amount of credit goes to:
-# https://github.com/keras-team/keras-contrib/blob/master/examples/improved_wgan.py
-# which I've used as a reference for this implementation
-
-from __future__ import print_function, division
+####
+# Heavily inspired by the WGAN-GP from https://github.com/eriklindernoren/Keras-GAN
+####
 
 from keras.layers.merge import _Merge
 from keras.layers import Input, Dense, Reshape, Flatten, Dropout
@@ -30,7 +28,7 @@ class RandomWeightedAverage(_Merge):
 		alpha = K.random_uniform((32, 1, 1, 1))
 		return (alpha * inputs[0]) + ((1 - alpha) * inputs[1])
 
-class WGANGP():
+class GAN():
 	def __init__(self):
 		self.img_rows = 28
 		self.img_cols = 28
@@ -39,8 +37,6 @@ class WGANGP():
 		self.latent_dim = 100
 
 		self.train_data = None
-
-
 
 		# Following parameter and optimizer set as recommended in paper
 		self.n_critic = 5
@@ -98,7 +94,7 @@ class WGANGP():
 		self.generator.trainable = True
 
 		# Sampled noise for input to generator
-		z_gen = Input(shape=(100,))
+		z_gen = Input(shape=(self.latent_dim,))
 		# Generate images based of noise
 		img = self.generator(z_gen)
 		# Discriminator determines validity
@@ -106,6 +102,28 @@ class WGANGP():
 		# Defines generator model
 		self.generator_model = Model(z_gen, valid)
 		self.generator_model.compile(loss=self.wasserstein_loss, optimizer=optimizer)
+
+	def capture_images(self, num_images):
+
+		img_list = []
+		for i in range(num_images):
+			camera = cv2.VideoCapture(0)
+			return_value, image = camera.read()
+
+			y_start = int(0.5*(image.shape[1] - image.shape[0]))
+
+			image_crop = image[:image.shape[0],y_start:y_start+image.shape[0],:]
+
+			image_resize = cv2.resize(image_crop, (self.img_rows, self.img_cols)) 
+
+			img_RGB = cv2.cvtColor(image_resize, cv2.COLOR_BGR2RGB)
+
+			img_list.append(img_RGB)
+			print("Picture: " + str(i))
+
+		self.train_data = np.array(img_list)
+
+		self.train_data = (self.train_data.astype(np.float32) - 127.5) / 127.5
 
 
 	def gradient_penalty_loss(self, y_true, y_pred, averaged_samples):
@@ -183,40 +201,7 @@ class WGANGP():
 
 		return Model(img, validity)
 
-	def capture_images(self, num_images):
-
-		img_list = []
-		for i in range(num_images):
-			camera = cv2.VideoCapture(0)
-			return_value, image = camera.read()
-
-			y_start = int(0.5*(image.shape[1] - image.shape[0]))
-
-			image_crop = image[:image.shape[0],y_start:y_start+image.shape[0],:]
-
-			#image_crop = image[:image.shape[0],:image.shape[0],:]
-
-			image_resize = cv2.resize(image_crop, (self.img_rows, self.img_cols)) 
-
-			# img_gray = cv2.cvtColor(image_resize, cv2.COLOR_BGR2GRAY)
-
-			img_RGB = cv2.cvtColor(image_resize, cv2.COLOR_BGR2RGB)
-
-			img_list.append(img_RGB)
-			print("Picture: " + str(i))
-
-		self.train_data = np.array(img_list)
-
-		self.train_data = (self.train_data.astype(np.float32) - 127.5) / 127.5
-
-
-
 	def train(self, epochs, batch_size, sample_interval=50):
-
-		# Load the dataset
-
-		# Rescale -1 to 1
-		#self.train_data = np.expand_dims(self.train_data, axis=3)
 
 		X_train = self.train_data
 
@@ -293,7 +278,7 @@ class WGANGP():
 
 
 if __name__ == '__main__':
-	wgan = WGANGP()
+	wgan = GAN()
 	wgan.capture_images(1000)
 	wgan.save_train_images()
-	wgan.train(epochs=30000, batch_size=32, sample_interval=10)
+	wgan.train(epochs=2000, batch_size=32, sample_interval=10)
