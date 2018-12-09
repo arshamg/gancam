@@ -68,7 +68,8 @@ class GAN():
 
 		# Construct weighted average between real and fake images
 		interpolated_img = RandomWeightedAverage()([real_img, fake_img])
-		# Determine validity of weighted sample
+
+		# Determine critic score of interpolated image
 		validity_interpolated = self.critic(interpolated_img)
 
 		# Use Python partial to provide loss function with additional
@@ -79,6 +80,7 @@ class GAN():
 
 		self.critic_model = Model(inputs=[real_img, z_disc],
 							outputs=[valid, fake, validity_interpolated])
+		
 		self.critic_model.compile(loss=[self.wasserstein_loss,
 											  self.wasserstein_loss,
 											  partial_gp_loss],
@@ -106,7 +108,7 @@ class GAN():
 	def capture_images(self, num_images):
 
 		img_list = []
-		for i in range(num_images):
+		for i in range(num_images+1):
 			camera = cv2.VideoCapture(0)
 			return_value, image = camera.read()
 
@@ -118,8 +120,10 @@ class GAN():
 
 			img_RGB = cv2.cvtColor(image_resize, cv2.COLOR_BGR2RGB)
 
-			img_list.append(img_RGB)
-			print("Picture: " + str(i))
+			# Discard dark first captured image 
+			if i > 0:
+				img_list.append(img_RGB)
+				print("Picture: " + str(i-1))
 
 		self.train_data = np.array(img_list)
 
@@ -254,7 +258,7 @@ class GAN():
 				axs[i,j].imshow(gen_imgs[cnt])
 				axs[i,j].axis('off')
 				cnt += 1
-		fig.savefig("images/mnist_%d.png" % epoch)
+		fig.savefig("images/generated_%d.png" % epoch)
 		plt.close()
 
 	def save_train_images(self):
