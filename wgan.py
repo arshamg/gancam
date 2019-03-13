@@ -1,6 +1,6 @@
 
 ####
-# Heavily inspired by the WGAN-GP from https://github.com/eriklindernoren/Keras-GAN
+# Arsham Ghahramani
 ####
 
 from keras.layers.merge import _Merge
